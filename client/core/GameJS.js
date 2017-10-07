@@ -1,15 +1,23 @@
 var scene = new THREE.Scene();
-var game = new GameJS();
 var socket = new WebSocket("ws://localhost:9998/");
+var game = new GameJS(scene, socket);
+
 socket.onopen = function() {
 	console.log("Клиент соеденился с сервером");
+	animate();
 };
 socket.onmessage = function (evt) { 
-	game.Parse(evt.data);
+	game.parse(evt.data);
 };
 socket.onclose = function() { 
 	console.log("Разрыв соеденения");
 };
+
+$( document ).ready(function() {
+	$("#login").click(function(){
+		socket.send('{"code": "AUTH_SESSION", "username": "' + $("#username").val() +  '", "password": "' + $("#password").val() +  '"}');
+	});
+});
 
 var clock = new THREE.Clock();
 var width = window.innerWidth;
@@ -64,28 +72,51 @@ var cameraControls = new THREE.OrbitControls( this.camera, this.renderer.domElem
 cameraControls.target.set( 0, 10, 0 );
 cameraControls.update();
 
-animate();
+//animate();
 
 function animate() {
 	var delta = clock.getDelta();
 	requestAnimationFrame( animate );
 	renderer.render( scene, camera );
 	stats.update();
+	game.update(delta);
 }
 
-function GameJS() {
-
+function GameJS(scene, socket) {
+	this.socket = socket;
+	this.scene = scene;
+	this.objects = [];
+	this.me = null;
+	this.keyCode = null;
 }
 
-GameJS.prototype.Parse = function(data) {
-	try {
+GameJS.prototype.update = function(delta) {
+	for(var i in this.objects) {
+		this.objects[i].update(delta);
+	}
+}
+
+GameJS.prototype.parse = function(data) {
+	//try {
 		var json = JSON.parse(data);
 		console.log("Ответ от сервера");
 		console.log(json);
 		switch (json.code) {
-			//case 'UPDATE_OBJECT': this.update_object(json.items); break;
+			case "UPDATE_OBJECT": this.update_object(json); break;
 		}
-	} catch(e) {
-		console.log("Ошибка в try/catche" + e);
+	//} catch(e) {
+	//	console.log("Ошибка в try/catche" + e);
+	//}
+}
+
+//Обновляем объекты
+GameJS.prototype.update_object = function(json) {
+	for(var i in json.items) {
+		if (!this.objects[json.items[i].id]) {
+			this.objects[json.items[i].id] = new ObjectG(json.items[i]);
+			this.scene.add(this.objects[json.items[i].id].root);
+		} else {
+			this.objects[json.items[i].id].parse(json.items[i]);
+		}
 	}
 }
