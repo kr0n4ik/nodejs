@@ -3,7 +3,7 @@ var scene = new THREE.Scene();
 var clock = new THREE.Clock();
 var width = window.innerWidth * 0.99;
 var height = window.innerHeight * 0.99;
-var camera = new THREE.PerspectiveCamera( 30, width / height, 0.1, 2000 );
+var camera = new THREE.PerspectiveCamera( 30, width / height, 0.1, 20000 );
 var objects = [];
 var me;
 
@@ -68,23 +68,17 @@ $( document ).ready(function() {
 });
 
 function auth_response(json) {
-	me = json.id;
+	me = json._id;
 }
 
 function update_object(json) {
 	for(var i in json.items) {
-		if (!objects[json.items[i]._id] && json.items[i].online && json.items[i].online == 1) {
-			objects[json.items[i]._id] = new ObjectG(json.items[i]);
-			scene.add(objects[json.items[i]._id].root);
-		} 
-		if (objects[json.items[i]._id]) {
-			objects[json.items[i]._id].parse(json.items[i]);
-			if (json.items[i]._id == me && json.items[i].name)
-				gui.setName(json.items[i].name);
-			if (json.items[i].online && json.items[i].online == 0) {
-				scene.remove( objects[json.items[i]._id]);
-				delete(objects[json.items[i]._id]);
-			}
+		var id = json.items[i]._id;
+		if (!objects[id]) {
+			objects[id] = new GameObject(json.items[i]);
+			scene.add(objects[id].root);
+		} else {
+			objects[id].parse(json.items[i]);
 		}
 	}
 }
@@ -92,16 +86,16 @@ function update_object(json) {
 function update(delta) {
 	for(var i in objects) {
 		objects[i].update(delta, objects);
-		if ( i == me ) {
-			//camera.rotation.y = this.objects[i].root.rotation.y;
-			//camera.lookAt(this.objects[i].root.position);
-			camera.position.x = this.objects[i].root.position.x  - 500 * Math.sin(this.objects[i].root.rotation.y);
-			camera.position.z = this.objects[i].root.position.z - 500 * Math.cos(this.objects[i].root.rotation.y);
-			camera.position.y = this.objects[i].root.position.y + this.objects[i].radius + this.objects[i].height;
-			camera.rotation.y = this.objects[i].root.rotation.y - Math.PI;
-		}
 	}
 }
+
+
+
+var cameraControls = new THREE.OrbitControls( this.camera, this.renderer.domElement );
+cameraControls.target.set( 0, 10, 0 );
+cameraControls.update();
+
+
 
 var keyCode;
 window.addEventListener( "keydown",
@@ -130,25 +124,4 @@ window.addEventListener( "keyup",
 		}
 	}
 );
-document.addEventListener( 'mousedown', function(e) { 
-	function getSelectObject(objects, raycaster){
-		for(var i in objects) {
-			if (objects[i].select == 1) {
-				for(var j in objects[i].root.children) {
-					var intersects = raycaster.intersectObject( objects[i].root.children[j] );
-					console.log(intersects);
-					if ( intersects.length > 0 ){
-						gui.setVictumName(objects[i].name);
-						socket.send('{"code": "SET_SELECTION", "id": "' + objects[i].id + '"}');
-						return objects[i];
-					}
-				}
-			}
-		}
-	}
-	var vector = new THREE.Vector3(( e.clientX / width ) * 2 - 1, -( e.clientY / height ) * 2 + 1, 0.5);
-	vector = vector.unproject(camera);
-	var raycaster = new THREE.Raycaster(camera.position, vector.sub(camera.position).normalize());
-	var object = getSelectObject(objects, raycaster);
-});
 
