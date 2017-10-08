@@ -4,19 +4,23 @@
 		<title>Игра</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-		<link type="text/css" rel="stylesheet" href="core/style.css" />
+		<link type="text/css" rel="stylesheet" href="assets/gui/style.css" />
 	</head>
 	<body>
 		<script src="core/jquery-3.2.1.js"></script>
 		<script src="core/three.js"></script>
-		<script src="core/OrbitControls.js"></script>
-		<script src="core/stats.min.js"></script>
 		<script src="core/ObjectsG.js"></script>
-		<script src="core/GameJS.js"></script>
-		<div>
-			<input type="text" id="username" value="tester">
-			<input type="text" id="password" value="123456">
-			<button id="login">Вход</button>
+		<script src="core/MMORPG.js"></script>
+		<div id="playerFrame">
+			<div id="name"><div></div></div>
+			<div id="health" class="progress"><div class="green"></div></div>
+			<div id="mana" class="progress"><div class="blue"></div></div>
 		</div>
+		<div id="victumFrame">
+			<div id="name"><div>1</div></div>
+			<div id="health" class="progress"><div class="green"></div></div>
+			<div id="mana" class="progress"><div class="blue"></div></div>
+		</div>
+		<script src="core/gui.js"></script>
 	</body>
 </html>

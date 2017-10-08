@@ -31,6 +31,12 @@ socket.on("connection", function(server, req) {
 			console.log(json);
 			switch (json.code) {
 				case "AUTH_SESSION": game.auth_session(sign, json); break;
+				case "MOVE_START_FORWARD": game.move_start_forward(sign, json); break;
+				case "MOVE_START_BACKWARD": game.move_start_backward(sign, json); break;
+				case "MOVE_START_TURN_LEFT": game.move_start_turn_left(sign, json); break;
+				case "MOVE_START_TURN_RIGHT": game.move_start_turn_right(sign, json); break;
+				case "MOVE_STOP_TURN": game.move_stop_turn(sign, json); break;
+				case "MOVE_STOP": game.move_stop(sign, json); break;
 			}
 		} catch(e) {
 			console.log("Ошибка в try/catche" + e);
@@ -52,6 +58,36 @@ console.log("Сервер игры стартовал");
 
 function GameJS(){
 
+}
+
+//Находим объект по id и двигаем его в перед
+GameJS.prototype.move_start_forward = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], move: "MOVE_START_FORWARD"}]}, "all");
+}
+
+//Находим объект по id и двигаем его в назад
+GameJS.prototype.move_start_backward = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], move: "MOVE_START_BACKWARD"}]}, "all");
+}
+
+//Находим объект по id и останавливаем
+GameJS.prototype.move_stop = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], move: "MOVE_STOP"}]}, "all");
+}
+
+//Находим объект по id и поворачиваем в лево
+GameJS.prototype.move_start_turn_left = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], turn: "MOVE_START_TURN_LEFT"}]}, "all");
+}
+
+//Находим объект по id и поворачиваем в право
+GameJS.prototype.move_start_turn_right = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], turn: "MOVE_START_TURN_RIGHT"}]}, "all");
+}
+
+//Находим объект по id и останавливаем его
+GameJS.prototype.move_stop_turn = function(sign, json) {
+	this.send(sign, {code:"UPDATE_OBJECT", items:[{_id:signs[sign], turn: "MOVE_STOP_TURN"}]}, "all");
 }
 
 GameJS.prototype.send = function(sign, data, type) {
@@ -76,24 +112,12 @@ GameJS.prototype.auth_session = function(sign, json) {
 			signs[sign] = item._id;
 			clients[item._id] = clients[sign];
 			delete(clients[sign]);
+			that.send(sign, {code:"AUTH_RESPONSE", id:item._id}, "me");
 			objects.find({}).toArray(function(error, list) {
 				if (list != null && error == null) {
 					var a = {};
 					a['code'] = 'UPDATE_OBJECT';
-					a['items'] = [];
-					for (var i in list) {
-						var b = {};
-						b['id'] = list[i]._id;
-						b['name'] = list[i].name;
-						b['x'] = parseFloat(list[i].x).toFixed(4) * 1.0;
-						b['y'] = parseFloat(list[i].y).toFixed(4) * 1.0;
-						b['z'] = parseFloat(list[i].z).toFixed(4) * 1.0;
-						b['o'] = parseFloat(list[i].o).toFixed(4) * 1.0;
-						b['type'] = list[i].type;
-						b['model'] = list[i].model;
-						b['scale'] = list[i].scale;
-						a['items'].push(b);
-					}
+					a['items'] = list;
 					that.send(sign, a, "me");
 				}
 			});
