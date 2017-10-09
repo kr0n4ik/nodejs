@@ -1,4 +1,6 @@
 function GameObject(json) {
+	this.mixes = [];
+	this.clips = [];
 	this.root = new THREE.Object3D();
 	this.caster = new THREE.Raycaster();
 	this.parse(json);
@@ -6,6 +8,8 @@ function GameObject(json) {
 		this.createGround();
 	if (this.format == "json")
 		this.loadJSON();
+	if (this.format == "mdl")
+		this.loadMDL();
 }
 //Парсим данные с сервера
 GameObject.prototype.parse = function(json) {
@@ -40,7 +44,8 @@ GameObject.prototype.parse = function(json) {
 	this.TurnRate = 5;
 	this.WalkSpeed = 90;
 	this.BackSpeed = 70;
-	
+	if (json.anim)
+		this.anim = json.anim;
 	console.log(json);
 }
 
@@ -84,16 +89,45 @@ GameObject.prototype.loadJSON = function() {
 
 //Загружаем модель в формате mdl
 GameObject.prototype.loadMDL = function() {
-	THREE.MDLLoader('assets/models/' + this.name + '/' + this.name + '.mdl', function(geos, anims) {
-		geos.forEach(function(geo) {
-				geo.extra.TexturePath = geo.extra.TexturePath ? 'assets/texture/' + geo.extra.TexturePath.split('\\').pop().replace(/\.\w+$/g, '.png') : ''
+	var mesh, that = this;
+	THREE.MDLLoader('assets/models/' + that.name + '/' + that.name + '.mdl', function(geometries, anims) {
+		geometries.forEach(function(geo) {
+				geo.extra.TexturePath = geo.extra.TexturePath ? 'assets/models/' + that.name + '/' + geo.extra.TexturePath.split('\\').pop().replace(/\.\w+$/g, '.png') : ''
 		});
-		
-	});
-	var mesh, that = this, loader = new THREE.JSONLoader();
-	loader.load( 'assets/models/' + this.name + '.json', function ( geometry, materials ) {
-		mesh = new THREE.Mesh( geometry, materials );
-		that.root.add(mesh);
+		for(var i in geometries) {
+			var mat = geometries[i].MaterialCache;
+			if (!mat) {
+				if (geometries[i].extra.TexturePath) {
+					var texture = THREE.ImageUtils.loadTexture(geometries[i].extra.TexturePath, undefined);
+					texture.flipY = false
+					mat = new THREE.MeshPhongMaterial({ map:texture, alphaTest:0.5, side:geometries[i].extra.TwoSided ? THREE.DoubleSide : THREE.FrontSide })
+				} else {
+					mat = new THREE.MeshBasicMaterial()
+				}
+				mat.skinning = true;
+				geometries[i].MaterialCache = mat;
+			}
+			mesh = new THREE.SkinnedMesh(geometries[i], mat);
+			that.root.add(mesh);
+			that.root.rotation.z = -Math.PI / 2;
+			that.root.rotation.x = -Math.PI / 2;
+			
+			//Тестовая анимация
+			for (j = 0; anim = geometries[i].animations[j]; ++j) {
+				if (!that.mixes[anim.name]) {
+					that.mixes[anim.name] = [];
+					console.log(anim.name);
+				}
+				if (!that.clips[anim.name])
+					that.clips[anim.name] = [];
+					
+				mix = new THREE.AnimationMixer(mesh);
+				clip = mix.clipAction(mesh.geometry.animations[j]);
+				clip.play();
+				that.mixes[anim.name].push(mix);
+				that.clips[anim.name].push(clip);
+			}
+		}
 	});
 }
 
@@ -125,11 +159,15 @@ GameObject.prototype.update = function(delta, objects) {
 			}
 		}
 		if (h < center.y - this.height - 30) {
-			center.y -= 500 * delta;
+			center.y -= 200 * delta;
 		}
 		if (h > center.y - this.radius - this.height/2) {
 			center.y = h + this.height/2 + this.radius;
 		}
 		this.root.position.copy( center );
 	}
+
+	if (this.anim)
+		for(var i in this.mixes[this.anim])
+			this.mixes[this.anim][i].update(delta);
 }
