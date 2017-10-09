@@ -25,16 +25,22 @@ GameObject.prototype.parse = function(json) {
 		this.root.scale.y = json.scale.y;
 		this.root.scale.z = json.scale.z;
 	}
-	this.root.rotation.x = (json.rotation) ? json.rotation.x : 0;
-	this.root.rotation.y = (json.rotation) ? json.rotation.y : 0;
-	this.root.rotation.y = (json.rotation) ? json.rotation.y : 0;
+	if (json.rotation) {
+		this.root.rotation.x = json.rotation.x;
+		this.root.rotation.y = json.rotation.y;
+		this.root.rotation.z = json.rotation.z;
+	}
+	if (json.turn)
+		this.turn = json.turn;
+	if (json.move)
+		this.move = json.move;
 	this.radius = 2;
 	this.height = 5;
 	this.half = 1;
-	this.TurnRate = 1;
-	this.WalkSpeed = 10;
-	this.BackSpeed = 1;
-	this.move = (json.move) ? json.move : "MOVE_STOP";
+	this.TurnRate = 5;
+	this.WalkSpeed = 90;
+	this.BackSpeed = 70;
+	
 	console.log(json);
 }
 
@@ -76,6 +82,21 @@ GameObject.prototype.loadJSON = function() {
 	});
 }
 
+//Загружаем модель в формате mdl
+GameObject.prototype.loadMDL = function() {
+	THREE.MDLLoader('assets/models/' + this.name + '/' + this.name + '.mdl', function(geos, anims) {
+		geos.forEach(function(geo) {
+				geo.extra.TexturePath = geo.extra.TexturePath ? 'assets/texture/' + geo.extra.TexturePath.split('\\').pop().replace(/\.\w+$/g, '.png') : ''
+		});
+		
+	});
+	var mesh, that = this, loader = new THREE.JSONLoader();
+	loader.load( 'assets/models/' + this.name + '.json', function ( geometry, materials ) {
+		mesh = new THREE.Mesh( geometry, materials );
+		that.root.add(mesh);
+	});
+}
+
 GameObject.prototype.update = function(delta, objects) {
 	if (this.type == "character")	{
 		var center = this.root.position.clone();
@@ -109,7 +130,6 @@ GameObject.prototype.update = function(delta, objects) {
 		if (h > center.y - this.radius - this.height/2) {
 			center.y = h + this.height/2 + this.radius;
 		}
-		console.log(center.z);
 		this.root.position.copy( center );
 	}
 }

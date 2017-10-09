@@ -31,13 +31,12 @@ socket.on("connection", function(server, req) {
 			console.log(json);
 			switch (json.code) {
 				case "AUTH_SESSION": mmorpg.auth_session(sign, json); break;
-				
 				case "MOVE_START_FORWARD": mmorpg.move_start_forward(sign, json); break;
-				//case "MOVE_START_BACKWARD": game.move_start_backward(sign, json); break;
-				//case "MOVE_START_TURN_LEFT": game.move_start_turn_left(sign, json); break;
-				//case "MOVE_START_TURN_RIGHT": game.move_start_turn_right(sign, json); break;
-				//case "MOVE_STOP_TURN": game.move_stop_turn(sign, json); break;
-				//case "MOVE_STOP": game.move_stop(sign, json); break;
+				case "MOVE_START_BACKWARD": mmorpg.move_start_backward(sign, json); break;
+				case "MOVE_START_TURN_LEFT": mmorpg.move_start_turn_left(sign, json); break;
+				case "MOVE_START_TURN_RIGHT": mmorpg.move_start_turn_right(sign, json); break;
+				case "MOVE_STOP_TURN": mmorpg.move_stop_turn(sign, json); break;
+				case "MOVE_STOP": mmorpg.move_stop(sign, json); break;
 			}
 		} catch(e) {
 			console.log("Ошибка в try/catche" + e);
@@ -70,8 +69,28 @@ MMORPG.prototype.auth_session = function(sign, json) {
 	});
 }
 
-//Находим объект по id и двигаем его в перед
 MMORPG.prototype.move_start_forward = function(sign, json) {
 	for (var i in clients)
 			clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", move: "MOVE_START_FORWARD"}]}));
+}
+MMORPG.prototype.move_start_backward = function(sign, json) {
+	for (var i in clients)
+			clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", move: "MOVE_START_BACKWARD"}]}));
+}
+MMORPG.prototype.move_start_turn_right = function(sign, json) {
+		for (var i in clients)
+				clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", turn: "MOVE_START_TURN_RIGHT"}]}));
+}
+MMORPG.prototype.move_start_turn_left = function(sign, json) {
+		for (var i in clients)
+				clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", turn: "MOVE_START_TURN_LEFT"}]}));
+}
+
+MMORPG.prototype.move_stop = function(sign, json) {
+	for (var i in clients)
+		clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", move: "MOVE_STOP"}]}));
+}
+MMORPG.prototype.move_stop_turn = function(sign, json) {
+	for (var i in clients)
+		clients[i].send(JSON.stringify({code:"UPDATE_OBJECT", items:[{_id:"59da2c47734d1d18c95cd930", turn: "MOVE_STOP_TURN"}]}));
 }
